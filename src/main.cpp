@@ -22,7 +22,7 @@
 
 void printUsage(const char *progName) {
   std::cout << "Usage: " << progName
-            << " <input.pdf> [output.cbz] [--parallel/-p]" << std::endl;
+            << " <input.pdf> [output.cbz] [--threads/-t <N>]" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -33,12 +33,27 @@ int main(int argc, char *argv[]) {
 
   std::string inputPath;
   std::string outputPath;
-  bool parallel = false;
+  int threads = 0; // 0 means default/auto
 
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
-    if (arg == "--parallel" || arg == "-p") {
-      parallel = true;
+    if (arg == "--threads" || arg == "-t") {
+      if (i + 1 < argc) {
+        try {
+          threads = std::stoi(argv[++i]);
+        } catch (...) {
+          std::cerr << "Invalid thread count." << std::endl;
+          return 1;
+        }
+      } else {
+        std::cerr << "Missing thread count argument." << std::endl;
+        return 1;
+      }
+    } else if (arg == "--parallel" || arg == "-p") {
+      // Deprecated but ignore
+      std::cout
+          << "Warning: --parallel/-p is deprecated. Parallel is now default."
+          << std::endl;
     } else if (inputPath.empty()) {
       inputPath = arg;
     } else if (outputPath.empty()) {
@@ -52,7 +67,6 @@ int main(int argc, char *argv[]) {
   }
 
   if (outputPath.empty()) {
-    // simple heuristic to replace extension
     size_t dotPos = inputPath.find_last_of('.');
     if (dotPos != std::string::npos) {
       outputPath = inputPath.substr(0, dotPos) + ".cbz";
@@ -61,20 +75,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << "Converting " << inputPath << " -> " << outputPath;
-  if (parallel)
-    std::cout << " (Parallel Mode)";
-  std::cout << std::endl;
+  std::cout << "Converting " << inputPath << " -> " << outputPath << std::endl;
 
   Converter converter(inputPath, outputPath);
-  bool success = false;
-  if (parallel) {
-    success = converter.processParallel(5);
-  } else {
-    success = converter.process();
-  }
-
-  if (success) {
+  if (converter.process(threads)) {
     std::cout << "Done!" << std::endl;
     return 0;
   } else {

@@ -41,96 +41,17 @@ Converter::Converter(const std::string &inputPath,
                      const std::string &outputPath)
     : m_inputPath(inputPath), m_outputPath(outputPath) {}
 
-bool Converter::process() {
-  std::cout << "Loading PDF: " << m_inputPath << std::endl;
-
-  // Load PDF document
-  poppler::document *doc = poppler::document::load_from_file(m_inputPath);
-  if (!doc) {
-    std::cerr << "Error: Could not load PDF file." << std::endl;
-    return false;
+bool Converter::process(int threads) {
+  int numThreads = threads;
+  if (numThreads <= 0) {
+    numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0)
+      numThreads = 1; // Fallback
   }
 
-  if (doc->is_locked()) {
-    std::cerr << "Error: PDF is locked." << std::endl;
-    delete doc;
-    return false;
-  }
-
-  int pages = doc->pages();
-  std::cout << "Total pages: " << pages << std::endl;
-
-  // Initialize ZIP archive
-  mz_zip_archive zip_archive;
-  memset(&zip_archive, 0, sizeof(zip_archive));
-
-  if (!mz_zip_writer_init_file(&zip_archive, m_outputPath.c_str(), 0)) {
-    std::cerr << "Error: Could not create ZIP file " << m_outputPath
-              << std::endl;
-    delete doc;
-    return false;
-  }
-
-  poppler::page_renderer renderer;
-  renderer.set_render_hint(poppler::page_renderer::antialiasing, true);
-  renderer.set_render_hint(poppler::page_renderer::text_antialiasing, true);
-
-  ProgressBar bar;
-  for (int i = 0; i < pages; ++i) {
-    poppler::page *p = doc->create_page(i);
-    if (!p) {
-      std::cerr << "Warning: Could not create page " << i << std::endl;
-      continue;
-    }
-
-    // Render page to image
-    // 150 DPI is usually good for comics
-    poppler::image img = renderer.render_page(p, 150.0, 150.0);
-
-    if (!img.is_valid()) {
-      std::cerr << "Warning: Could not render page " << i << std::endl;
-      delete p;
-      continue;
-    }
-
-    std::stringstream ss;
-    ss << std::setfill('0') << std::setw(4) << i << ".jpg";
-    std::string filename = ss.str();
-
-    std::string temp_file = "temp_" + filename;
-    if (!img.save(temp_file, "jpeg", 80)) { // 80 quality jpeg
-      if (!img.save(temp_file, "png")) {
-        std::cerr << "Warning: Could not save image for page " << i
-                  << std::endl;
-        delete p;
-        continue;
-      }
-    }
-
-    if (!mz_zip_writer_add_file(&zip_archive, filename.c_str(),
-                                temp_file.c_str(), NULL, 0,
-                                MZ_BEST_COMPRESSION)) {
-      std::cerr << "Error adding file to zip: " << filename << std::endl;
-    }
-
-    // cleanup temp file
-    fs::remove(temp_file);
-    delete p;
-    bar.update(i + 1, pages);
-  }
-
-  mz_zip_writer_finalize_archive(&zip_archive);
-  mz_zip_writer_end(&zip_archive);
-  delete doc;
-
-  std::cout << "Successfully created " << m_outputPath << std::endl;
-  return true;
-}
-
-bool Converter::processParallel(int maxThreads) {
-  int numThreads = std::min(maxThreads, 5);
-  if (numThreads < 1)
-    numThreads = 1;
+  // Clamp to a sane maximum to avoid system exhaustion
+  if (numThreads > 32)
+    numThreads = 32;
 
   std::cout << "Loading PDF for page count: " << m_inputPath << std::endl;
   std::unique_ptr<poppler::document> doc(
@@ -147,8 +68,8 @@ bool Converter::processParallel(int maxThreads) {
   doc.reset();
 
   std::cout << "Total pages: " << totalPages << std::endl;
-  std::cout << "Starting parallel conversion with " << numThreads
-            << " threads..." << std::endl;
+  std::cout << "Starting conversion with " << numThreads << " threads..."
+            << std::endl;
 
   mz_zip_archive zip_archive;
   memset(&zip_archive, 0, sizeof(zip_archive));
@@ -246,7 +167,7 @@ bool Converter::processParallel(int maxThreads) {
     std::cout << "Successfully created " << m_outputPath << std::endl;
     return true;
   } else {
-    std::cerr << "Parallel conversion failed." << std::endl;
+    std::cerr << "Conversion failed." << std::endl;
     return false;
   }
 }
