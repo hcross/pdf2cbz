@@ -43,7 +43,8 @@ jobs:
       - name: Configure CMake
         run: |
           mkdir build
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          VERSION=${GITHUB_REF#refs/tags/v}
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DVERSION_OVERRIDE=$VERSION
 
       - name: Build
         run: |

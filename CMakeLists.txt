@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.17)
 project(pdf2cbz VERSION 1.0)
 
+# Allow version override from command line (used in CI)
+if(VERSION_OVERRIDE)
+    set(PROJECT_VERSION ${VERSION_OVERRIDE})
+endif()
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.hpp.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/version.hpp"
+)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -14,7 +24,7 @@ message(STATUS "Poppler include: ${POPPLER_INCLUDE_DIRS}")
 message(STATUS "Poppler libs: ${POPPLER_LIBRARIES}")
 message(STATUS "Poppler lib dirs: ${POPPLER_LIBRARY_DIRS}")
 
-include_directories(${POPPLER_INCLUDE_DIRS} src/vendor)
+include_directories(${POPPLER_INCLUDE_DIRS} src/vendor "${CMAKE_CURRENT_BINARY_DIR}/generated")
 link_directories(${POPPLER_LIBRARY_DIRS})
 
 add_executable(pdf2cbz

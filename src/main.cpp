@@ -1,4 +1,5 @@
 #include "converter.hpp"
+#include "version.hpp"
 /*
     pdf2cbz - PDF to CBZ Converter
     Copyright (C) 2025 Hoani Cross
@@ -22,7 +23,12 @@
 
 void printUsage(const char *progName) {
   std::cout << "Usage: " << progName
-            << " <input.pdf> [output.cbz] [--threads/-t <N>]" << std::endl;
+            << " <input.pdf> [output.cbz] [--threads/-t <N>] [--version|-v]"
+            << std::endl;
+}
+
+void printVersion() {
+  std::cout << "pdf2cbz version " << PROJECT_VERSION << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -49,6 +55,9 @@ int main(int argc, char *argv[]) {
         std::cerr << "Missing thread count argument." << std::endl;
         return 1;
       }
+    } else if (arg == "--version" || arg == "-v") {
+      printVersion();
+      return 0;
     } else if (arg == "--parallel" || arg == "-p") {
       // Deprecated but ignore
       std::cout

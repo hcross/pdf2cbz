@@ -43,12 +43,13 @@ The executable `pdf2cbz` will be located in the `build/` directory.
 ## Usage
 
 ```bash
-./pdf2cbz <input.pdf> [output.cbz] [--threads|-t <N>]
+./pdf2cbz <input.pdf> [output.cbz] [--threads|-t <N>] [--version|-v]
 ```
 
 - **input.pdf**: Path to the source PDF.
 - **output.cbz**: (Optional) Destination path. Defaults to input name with `.cbz`.
 - **--threads / -t**: (Optional) Number of parallel threads. Defaults to your CPU core count.
+- **--version / -v**: Display the tool version.
 
 ### Example
 
