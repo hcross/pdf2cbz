@@ -18,10 +18,10 @@ jobs:
           - runner: ubuntu-24.04-arm
             os: linux
             arch: arm64
-          - runner: macos-13
+          - runner: macos-15-intel
             os: macos
             arch: x64
-          - runner: macos-14
+          - runner: macos-latest
             os: macos
             arch: arm64
 
