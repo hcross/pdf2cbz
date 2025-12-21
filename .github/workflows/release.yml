@@ -81,3 +81,53 @@ jobs:
             binaries-macos-arm64/pdf2cbz-macos-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-tap:
+    name: Update Homebrew Tap
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: hcross/homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Calculate and Update Formula
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          
+          echo "Bumping to version $VERSION"
+          
+          # Function to get SHA256 from a URL
+          get_sha256() {
+            curl -L -s "$1" | shasum -a 256 | awk '{print $1}'
+          }
+
+          echo "Calculating hashes..."
+          LINUX_X64_SHA=$(get_sha256 "https://github.com/hcross/pdf2cbz/releases/download/v$VERSION/pdf2cbz-linux-x64.tar.gz")
+          LINUX_ARM64_SHA=$(get_sha256 "https://github.com/hcross/pdf2cbz/releases/download/v$VERSION/pdf2cbz-linux-arm64.tar.gz")
+          MACOS_X64_SHA=$(get_sha256 "https://github.com/hcross/pdf2cbz/releases/download/v$VERSION/pdf2cbz-macos-x64.tar.gz")
+          MACOS_ARM64_SHA=$(get_sha256 "https://github.com/hcross/pdf2cbz/releases/download/v$VERSION/pdf2cbz-macos-arm64.tar.gz")
+
+          # Update Version and SHA256 in the formula using sed
+          # We use complex patterns to find the line following the URL
+          sed -i "s/version \".*\"/version \"$VERSION\"/" homebrew-tap/Formula/pdf2cbz.rb
+          sed -i "/pdf2cbz-macos-arm64.tar.gz/{n;s/sha256 \".*\"/sha256 \"$MACOS_ARM64_SHA\"/;}" homebrew-tap/Formula/pdf2cbz.rb
+          sed -i "/pdf2cbz-macos-x64.tar.gz/{n;s/sha256 \".*\"/sha256 \"$MACOS_X64_SHA\"/;}" homebrew-tap/Formula/pdf2cbz.rb
+          sed -i "/pdf2cbz-linux-arm64.tar.gz/{n;s/sha256 \".*\"/sha256 \"$LINUX_ARM64_SHA\"/;}" homebrew-tap/Formula/pdf2cbz.rb
+          sed -i "/pdf2cbz-linux-x64.tar.gz/{n;s/sha256 \".*\"/sha256 \"$LINUX_X64_SHA\"/;}" homebrew-tap/Formula/pdf2cbz.rb
+
+      - name: Commit and Push
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/pdf2cbz.rb
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: bump pdf2cbz to v${GITHUB_REF#refs/tags/v}"
+            git push
+          else
+            echo "No changes to commit"
+          fi
