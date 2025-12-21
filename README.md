@@ -59,11 +59,12 @@ vcpkg install poppler
 ## Usage
 
 ```bash
-./pdf2cbz <input.pdf> [output.cbz]
+./pdf2cbz <input.pdf> [output.cbz] [--parallel|-p]
 ```
 
 - **input.pdf**: Path to the PDF file you want to convert.
 - **output.cbz**: (Optional) Path for the output CBZ file. If omitted, the tool will use the input filename with a `.cbz` extension.
+- **--parallel** / **-p**: Enable parallel processing (uses up to 5 threads) for faster conversion.
 
 ### Example
 
@@ -71,8 +72,8 @@ vcpkg install poppler
 # Basic usage
 ./pdf2cbz comics.pdf
 
-# Specify output name
-./pdf2cbz comics.pdf my-awesome-comic.cbz
+# Parallel mode (faster)
+./pdf2cbz comics.pdf -p
 ```
 
 ## License

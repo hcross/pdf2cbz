@@ -21,8 +21,8 @@
 #include <string>
 
 void printUsage(const char *progName) {
-  std::cout << "Usage: " << progName << " <input.pdf> [output.cbz]"
-            << std::endl;
+  std::cout << "Usage: " << progName
+            << " <input.pdf> [output.cbz] [--parallel/-p]" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -31,12 +31,27 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::string inputPath = argv[1];
+  std::string inputPath;
   std::string outputPath;
+  bool parallel = false;
 
-  if (argc >= 3) {
-    outputPath = argv[2];
-  } else {
+  for (int i = 1; i < argc; ++i) {
+    std::string arg = argv[i];
+    if (arg == "--parallel" || arg == "-p") {
+      parallel = true;
+    } else if (inputPath.empty()) {
+      inputPath = arg;
+    } else if (outputPath.empty()) {
+      outputPath = arg;
+    }
+  }
+
+  if (inputPath.empty()) {
+    printUsage(argv[0]);
+    return 1;
+  }
+
+  if (outputPath.empty()) {
     // simple heuristic to replace extension
     size_t dotPos = inputPath.find_last_of('.');
     if (dotPos != std::string::npos) {
@@ -46,10 +61,20 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << "Converting " << inputPath << " -> " << outputPath << std::endl;
+  std::cout << "Converting " << inputPath << " -> " << outputPath;
+  if (parallel)
+    std::cout << " (Parallel Mode)";
+  std::cout << std::endl;
 
   Converter converter(inputPath, outputPath);
-  if (converter.process()) {
+  bool success = false;
+  if (parallel) {
+    success = converter.processParallel(5);
+  } else {
+    success = converter.process();
+  }
+
+  if (success) {
     std::cout << "Done!" << std::endl;
     return 0;
   } else {

@@ -24,6 +24,7 @@ class Converter {
 public:
   Converter(const std::string &inputPath, const std::string &outputPath);
   bool process();
+  bool processParallel(int maxThreads);
 
 private:
   std::string m_inputPath;

@@ -2,4 +2,6 @@ build/
 *.cbz
 temp_*.jpg
 temp_*.png
+DS_Store
+.cache
 .DS_Store
