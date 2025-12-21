@@ -17,6 +17,7 @@
 */
 
 #include "converter.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <atomic>
 #include <filesystem>
@@ -74,9 +75,8 @@ bool Converter::process() {
   renderer.set_render_hint(poppler::page_renderer::antialiasing, true);
   renderer.set_render_hint(poppler::page_renderer::text_antialiasing, true);
 
+  ProgressBar bar;
   for (int i = 0; i < pages; ++i) {
-    std::cout << "Processing page " << (i + 1) << "/" << pages << "..."
-              << std::endl;
     poppler::page *p = doc->create_page(i);
     if (!p) {
       std::cerr << "Warning: Could not create page " << i << std::endl;
@@ -93,25 +93,12 @@ bool Converter::process() {
       continue;
     }
 
-    // Convert to logic that miniz likes or just dump raw bytes if we had a easy
-    // way. Poppler gives us raw BGRA or RGB data. We need to encode this as
-    // JPEG or PNG to put inside the CBZ. A simple way is to use a STB image
-    // writer or similar, BUT requested task is "only C++" (and deps I
-    // gathered). Poppler might support saving to file? poppler::image has save
-    // method!
-
     std::stringstream ss;
     ss << std::setfill('0') << std::setw(4) << i << ".jpg";
     std::string filename = ss.str();
 
-    // Warning: poppler::image::save wants a filename, not a buffer.
-    // So we have to write to a temp file then read it back into the zip.
-    // This is a bit inefficient but easy to implement.
-
     std::string temp_file = "temp_" + filename;
     if (!img.save(temp_file, "jpeg", 80)) { // 80 quality jpeg
-      // Fallback to png if jpeg not supported by specific poppler build?
-      // Usually it supports "jpeg", "png", "tiff".
       if (!img.save(temp_file, "png")) {
         std::cerr << "Warning: Could not save image for page " << i
                   << std::endl;
@@ -119,10 +106,6 @@ bool Converter::process() {
         continue;
       }
     }
-
-    // Read file content
-    // In a real optimized app we would avoid disk IO but this is a CLI tool.
-    // Wait, miniz has mz_zip_writer_add_file which reads from disk!
 
     if (!mz_zip_writer_add_file(&zip_archive, filename.c_str(),
                                 temp_file.c_str(), NULL, 0,
@@ -133,6 +116,7 @@ bool Converter::process() {
     // cleanup temp file
     fs::remove(temp_file);
     delete p;
+    bar.update(i + 1, pages);
   }
 
   mz_zip_writer_finalize_archive(&zip_archive);
@@ -180,6 +164,7 @@ bool Converter::processParallel(int maxThreads) {
   std::vector<std::thread> workers;
   std::atomic<bool> success{true};
 
+  ProgressBar bar;
   for (int t = 0; t < numThreads; ++t) {
     workers.emplace_back([&, t]() {
       std::unique_ptr<poppler::document> localDoc(
@@ -239,6 +224,9 @@ bool Converter::processParallel(int maxThreads) {
             std::cerr << "Error adding file to zip: " << filename << std::endl;
             success = false;
           }
+          // Update progress bar
+          static std::atomic<int> completed{0};
+          bar.update(++completed, totalPages);
         }
 
         fs::remove(temp_file);
