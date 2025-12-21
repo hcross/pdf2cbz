@@ -1,6 +1,6 @@
 # Distribution Guide
 
-This document provides templates and instructions for making `pdf2cbz` available on package managers like Homebrew (macOS/Linux) and Chocolatey (Windows).
+This document provides templates and instructions for making `pdf2cbz` available on package managers like Homebrew (macOS/Linux).
 
 ## Homebrew (macOS & Linux)
 
@@ -44,7 +44,7 @@ To avoid compilation on every install, you can distribute pre-built binaries. Up
 class Pdf2cbz < Formula
   desc "PDF to CBZ CLI Converter"
   homepage "https://github.com/hoanicross/pdf2cbz"
-  version "1.0.1"
+  version "1.0.2"
 
   on_macos do
     if Hardware::CPU.arm?
