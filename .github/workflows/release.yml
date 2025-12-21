@@ -112,13 +112,18 @@ jobs:
           MACOS_X64_SHA=$(get_sha256 "https://github.com/hcross/pdf2cbz/releases/download/v$VERSION/pdf2cbz-macos-x64.tar.gz")
           MACOS_ARM64_SHA=$(get_sha256 "https://github.com/hcross/pdf2cbz/releases/download/v$VERSION/pdf2cbz-macos-arm64.tar.gz")
 
-          # Update Version and SHA256 in the formula using sed
-          # We use complex patterns to find the line following the URL
+          # Update Version, URLs and SHA256 in the formula
+          # 1. Update the version line
           sed -i "s/version \".*\"/version \"$VERSION\"/" homebrew-tap/Formula/pdf2cbz.rb
-          sed -i "/pdf2cbz-macos-arm64.tar.gz/{n;s/sha256 \".*\"/sha256 \"$MACOS_ARM64_SHA\"/;}" homebrew-tap/Formula/pdf2cbz.rb
-          sed -i "/pdf2cbz-macos-x64.tar.gz/{n;s/sha256 \".*\"/sha256 \"$MACOS_X64_SHA\"/;}" homebrew-tap/Formula/pdf2cbz.rb
-          sed -i "/pdf2cbz-linux-arm64.tar.gz/{n;s/sha256 \".*\"/sha256 \"$LINUX_ARM64_SHA\"/;}" homebrew-tap/Formula/pdf2cbz.rb
-          sed -i "/pdf2cbz-linux-x64.tar.gz/{n;s/sha256 \".*\"/sha256 \"$LINUX_X64_SHA\"/;}" homebrew-tap/Formula/pdf2cbz.rb
+          
+          # 2. Update all download URLs (replaces v... or old v1.x.x)
+          sed -i "s|releases/download/v[^/]*|releases/download/v$VERSION|g" homebrew-tap/Formula/pdf2cbz.rb
+          
+          # 3. Update SHAs using multiline perl (replaces "..." or old hashes)
+          perl -i -0777 -pe "s/(macos-arm64\.tar\.gz.*?sha256 \").*?\"/\$1$MACOS_ARM64_SHA\"/s" homebrew-tap/Formula/pdf2cbz.rb
+          perl -i -0777 -pe "s/(macos-x64\.tar\.gz.*?sha256 \").*?\"/\$1$MACOS_X64_SHA\"/s" homebrew-tap/Formula/pdf2cbz.rb
+          perl -i -0777 -pe "s/(linux-arm64\.tar\.gz.*?sha256 \").*?\"/\$1$LINUX_ARM64_SHA\"/s" homebrew-tap/Formula/pdf2cbz.rb
+          perl -i -0777 -pe "s/(linux-x64\.tar\.gz.*?sha256 \").*?\"/\$1$LINUX_X64_SHA\"/s" homebrew-tap/Formula/pdf2cbz.rb
 
       - name: Commit and Push
         run: |

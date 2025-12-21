@@ -43,25 +43,25 @@ To avoid compilation on every install, you can distribute pre-built binaries. Up
 ```ruby
 class Pdf2cbz < Formula
   desc "PDF to CBZ CLI Converter"
-  homepage "https://github.com/hoanicross/pdf2cbz"
+  homepage "https://github.com/hcross/pdf2cbz"
   version "..."
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/hoanicross/pdf2cbz/releases/download/v.../pdf2cbz-macos-arm64.tar.gz"
+      url "https://github.com/hcross/pdf2cbz/releases/download/v.../pdf2cbz-macos-arm64.tar.gz"
       sha256 "..."
     else
-      url "https://github.com/hoanicross/pdf2cbz/releases/download/v.../pdf2cbz-macos-x64.tar.gz"
+      url "https://github.com/hcross/pdf2cbz/releases/download/v.../pdf2cbz-macos-x64.tar.gz"
       sha256 "..."
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/hoanicross/pdf2cbz/releases/download/v.../pdf2cbz-linux-arm64.tar.gz"
+      url "https://github.com/hcross/pdf2cbz/releases/download/v.../pdf2cbz-linux-arm64.tar.gz"
       sha256 "..."
     else
-      url "https://github.com/hoanicross/pdf2cbz/releases/download/v.../pdf2cbz-linux-x64.tar.gz"
+      url "https://github.com/hcross/pdf2cbz/releases/download/v.../pdf2cbz-linux-x64.tar.gz"
       sha256 "..."
     end
   end
