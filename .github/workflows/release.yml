@@ -7,24 +7,36 @@ on:
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Build on ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          - runner: ubuntu-latest
+            os: linux
+            arch: x64
+          - runner: ubuntu-24.04-arm
+            os: linux
+            arch: arm64
+          - runner: macos-13
+            os: macos
+            arch: x64
+          - runner: macos-14
+            os: macos
+            arch: arm64
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libpoppler-cpp-dev pkg-config cmake build-essential
 
       - name: Install dependencies (macOS)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos'
         run: |
           brew install poppler pkg-config cmake
 
@@ -37,22 +49,15 @@ jobs:
         run: |
           cmake --build build --config Release
 
-      - name: Packaging (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Packaging
         run: |
-          mv build/pdf2cbz pdf2cbz-linux-x64
-          tar -czvf pdf2cbz-linux-x64.tar.gz pdf2cbz-linux-x64
-
-      - name: Packaging (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          mv build/pdf2cbz pdf2cbz-macos-x64
-          tar -czvf pdf2cbz-macos-x64.tar.gz pdf2cbz-macos-x64
+          cp build/pdf2cbz pdf2cbz
+          tar -czvf pdf2cbz-${{ matrix.os }}-${{ matrix.arch }}.tar.gz pdf2cbz
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ matrix.os }}
+          name: binaries-${{ matrix.os }}-${{ matrix.arch }}
           path: pdf2cbz-*.tar.gz
 
   release:
@@ -70,7 +75,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            binaries-ubuntu-latest/pdf2cbz-linux-x64.tar.gz
-            binaries-macos-latest/pdf2cbz-macos-x64.tar.gz
+            binaries-linux-x64/pdf2cbz-linux-x64.tar.gz
+            binaries-linux-arm64/pdf2cbz-linux-arm64.tar.gz
+            binaries-macos-x64/pdf2cbz-macos-x64.tar.gz
+            binaries-macos-arm64/pdf2cbz-macos-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

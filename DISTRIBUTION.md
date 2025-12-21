@@ -10,7 +10,9 @@ To provide a Homebrew formula, you can either submit it to `homebrew/core` (requ
 1. Create a repository named `homebrew-tap` on GitHub.
 2. Create a file named `pdf2cbz.rb` in that repository.
 
-### Formula Template (`pdf2cbz.rb`)
+### Option 1: Source-Build Formula (Recommended for safety)
+This template builds `pdf2cbz` on the user's machine. It works on both macOS and Linux.
+
 ```ruby
 class Pdf2cbz < Formula
   desc "PDF to CBZ Converter with parallel processing support"
@@ -27,6 +29,48 @@ class Pdf2cbz < Formula
     system "cmake", "-S", ".", "-B", "build", *std_cmake_args
     system "cmake", "--build", "build"
     bin.install "build/pdf2cbz"
+  end
+
+  test do
+    system "#{bin}/pdf2cbz", "--version"
+  end
+end
+```
+
+### Option 2: Binary Distribution Formula (Faster installation)
+To avoid compilation on every install, you can distribute pre-built binaries. Update the `url` and `sha256` for each platform.
+
+```ruby
+class Pdf2cbz < Formula
+  desc "PDF to CBZ Converter"
+  homepage "https://github.com/hoanicross/pdf2cbz"
+  version "1.0.0"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://github.com/hoanicross/pdf2cbz/releases/download/v1.0.0/pdf2cbz-macos-arm64.tar.gz"
+      sha256 "..."
+    else
+      url "https://github.com/hoanicross/pdf2cbz/releases/download/v1.0.0/pdf2cbz-macos-x64.tar.gz"
+      sha256 "..."
+    end
+  end
+
+  on_linux do
+    if Hardware::CPU.arm?
+      url "https://github.com/hoanicross/pdf2cbz/releases/download/v1.0.0/pdf2cbz-linux-arm64.tar.gz"
+      sha256 "..."
+    else
+      url "https://github.com/hoanicross/pdf2cbz/releases/download/v1.0.0/pdf2cbz-linux-x64.tar.gz"
+      sha256 "..."
+    end
+  end
+
+  def install
+    # The binary might be named based on the artifact name in release.yml
+    # Adjust the filename accordingly (e.g., pdf2cbz-linux-x64)
+    # Or rename them during the packaging step in CI.
+    bin.install "pdf2cbz"
   end
 
   test do
