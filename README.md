@@ -40,6 +40,16 @@ cmake --build build
 
 The executable `pdf2cbz` will be located in the `build/` directory.
 
+#### 3. Run Tests (Optional)
+
+To compile and run unit tests:
+
+```bash
+cmake -S . -B build -DENABLE_TESTS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
 ## Usage
 
 ```bash

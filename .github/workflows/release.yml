@@ -44,11 +44,15 @@ jobs:
         run: |
           mkdir build
           VERSION=${GITHUB_REF#refs/tags/v}
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DVERSION_OVERRIDE=$VERSION
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DVERSION_OVERRIDE=$VERSION -DENABLE_TESTS=ON
 
       - name: Build
         run: |
           cmake --build build --config Release
+
+      - name: Run Tests
+        run: |
+          ctest --test-dir build --output-on-failure
 
       - name: Packaging
         run: |
