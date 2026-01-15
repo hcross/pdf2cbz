@@ -49,16 +49,19 @@ Create a dedicated branch for your work using the following naming convention:
 ### 3. Implementation
 Develop the software to implement the feature or fix the issue. Ensure your code follows the existing style and architecture.
 
-> [!NOTE]
-> Testing approach is currently omitted from this guide and will be addressed in a future update.
+### 4. Testing
+The project uses Google Test (GTest) for unit testing. Tests are located in the `tests/` directory.
+- **Local Testing**: Run tests using `cmake -DENABLE_TESTS=ON` followed by `ctest`.
+- **CI/CD**: Tests are automatically executed on every push to a release tag across Linux and macOS environments.
+- **Testability**: Core logic is encapsulated in the `pdf2cbz_core` static library to facilitate testing without the `main` entry point.
 
-### 4. Pull Request
+### 5. Pull Request
 Push your branch and create a Pull Request (PR) on GitHub. Your PR should include:
 - **TLDR**: A 10-second summary of what this PR does.
 - **Description**: A detailed explanation of the changes made.
 - **Flaws/Awareness**: Highlight any known limitations, specific complexities, or portions requiring extra attention during review.
 
-### 5. Review & Merge
+### 6. Review & Merge
 After the PR is reviewed and validated by a maintainer, it can be merged into the `main` branch.
 
 ### 6. Release & Versioning

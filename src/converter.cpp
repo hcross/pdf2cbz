@@ -18,7 +18,7 @@
 
 #include "converter.hpp"
 #include "utils.hpp"
-#include <algorithm>
+#include "vendor/miniz.h"
 #include <atomic>
 #include <filesystem>
 #include <iomanip>
@@ -30,28 +30,13 @@
 #include <poppler-page.h>
 #include <sstream>
 #include <thread>
-#include <vector>
-
-// Miniz implementation
-#include "vendor/miniz.h"
-
-namespace fs = std::filesystem;
 
 Converter::Converter(const std::string &inputPath,
                      const std::string &outputPath)
     : m_inputPath(inputPath), m_outputPath(outputPath) {}
 
 bool Converter::process(int threads) {
-  int numThreads = threads;
-  if (numThreads <= 0) {
-    numThreads = std::thread::hardware_concurrency();
-    if (numThreads == 0)
-      numThreads = 1; // Fallback
-  }
-
-  // Clamp to a sane maximum to avoid system exhaustion
-  if (numThreads > 32)
-    numThreads = 32;
+  int numThreads = calculateNumThreads(threads);
 
   std::cout << "Loading PDF for page count: " << m_inputPath << std::endl;
   std::unique_ptr<poppler::document> doc(
@@ -150,7 +135,7 @@ bool Converter::process(int threads) {
           bar.update(++completed, totalPages);
         }
 
-        fs::remove(temp_file);
+        std::filesystem::remove(temp_file);
       }
     });
   }
@@ -170,4 +155,19 @@ bool Converter::process(int threads) {
     std::cerr << "Conversion failed." << std::endl;
     return false;
   }
+}
+
+int Converter::calculateNumThreads(int requestedThreads) {
+  int threads = requestedThreads;
+  if (threads <= 0) {
+    threads = std::thread::hardware_concurrency();
+    if (threads == 0)
+      threads = 1; // Fallback
+  }
+
+  // Clamp to a sane maximum to avoid system exhaustion
+  if (threads > 32)
+    threads = 32;
+
+  return threads;
 }

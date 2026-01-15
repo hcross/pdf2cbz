@@ -25,6 +25,9 @@ public:
   Converter(const std::string &inputPath, const std::string &outputPath);
   bool process(int threads = 0);
 
+protected:
+  int calculateNumThreads(int requestedThreads);
+
 private:
   std::string m_inputPath;
   std::string m_outputPath;
